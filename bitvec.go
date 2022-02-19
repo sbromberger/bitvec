@@ -2,17 +2,17 @@
 package bitvec
 
 const (
-	nbits   = 5          // 32 bits in a uint32
+	nbits   = 6          // 64 bits in a uint64
 	ws      = 1 << nbits // constant 64
 	mask    = ws - 1     // all ones
 	bitsize = 2 ^ nbits
 )
 
 // BitVec is a nonatomic bit vector.
-type BitVec []uint32
+type BitVec []uint64
 
 // NewBitVec creates a non-atomic bitvector.
-func NewBitVec(size uint32) BitVec {
+func NewBitVec(size uint64) BitVec {
 	nints := size / ws
 	if size-(nints*bitsize) != 0 {
 		nints++
@@ -21,13 +21,13 @@ func NewBitVec(size uint32) BitVec {
 	return make(BitVec, nints)
 }
 
-func (BitVec) offset(k uint32) (bucket, bit uint32) {
+func (BitVec) offset(k uint64) (bucket, bit uint64) {
 	return k >> nbits, 1 << (k & mask)
 }
 
 // TrySet will try to set the bit and will return true if set
 // is successful.
-func (bv BitVec) TrySet(k uint32) bool {
+func (bv BitVec) TrySet(k uint64) bool {
 	bucket, bit := bv.offset(k)
 	old := bv[bucket]
 	if old&bit != 0 {

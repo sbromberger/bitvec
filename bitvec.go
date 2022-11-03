@@ -12,7 +12,7 @@ const (
 type BitVec []uint64
 
 // NewBitVec creates a non-atomic bitvector.
-func NewBitVec(size uint64) BitVec {
+func New(size uint64) BitVec {
 	nints := size / ws
 	if size-(nints*bitsize) != 0 {
 		nints++

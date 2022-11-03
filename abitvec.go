@@ -8,7 +8,7 @@ import "sync/atomic"
 type ABitVec []uint64
 
 // NewABitVec returns a new bitvector with the given size
-func NewABitVec(size uint64) ABitVec {
+func NewAtomic(size uint64) ABitVec {
 	return make(ABitVec, (size+mask)>>nbits)
 }
 

@@ -1,6 +1,7 @@
 package bitvec
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -8,6 +9,8 @@ import (
 var GoodSets = []uint64{0, 1, 2, 3, 4, 5, 10, 11, 20, 50, 89, 98, 99}
 var UnSets = []uint64{6, 7, 9, 96, 97}
 var BadSets = []uint64{100, 101, 200, 1000}
+
+var setSizes = []int{13, 256, 65536, 16777216}
 
 func TestBV(t *testing.T) {
 	bv := New(100)
@@ -59,84 +62,66 @@ func TestBV(t *testing.T) {
 
 }
 
-// func TestAtomicBV(t *testing.T) {
-// 	for _, k := range GoodSets {
-// 		if !bv.TrySet(k) {
-// 			t.Errorf("Error: could not set good index %d", k)
-// 		}
-// 	}
-// 	for _, k := range BadSets {
-// 		if bv.TrySet(k) {
-// 			t.Errorf("Error: successfully set bad index %d ", k)
-// 		}
-// 	}
-
-// 	for _, k := range UnSets {
-// 		if x, _ := bv.Get(k); x {
-// 			t.Errorf("Error: bit %d was not supposed to be set but was", k)
-// 		}
-// 	}
-// 	if _, err := bv.Get(101); err == nil {
-// 		t.Errorf("Error should be thrown for out of bounds access")
-// 	}
-// }
-
 var r = rand.New(rand.NewSource(99))
-var sets = r.Perm(10_000_000)
+var sets = r.Perm(1024 * 1024)
 
 func BenchmarkSet(b *testing.B) {
-	b.Run("bitvec/Set", func(b *testing.B) {
-		bv := New(uint64(b.N / 64))
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			bv.TrySet(uint64(sets[n%len(sets)] % n))
-		}
-	})
-	b.Run("abitvec/Set", func(b *testing.B) {
-		abv := NewAtomic(uint64(b.N / 64))
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			abv.TrySet(uint64(sets[n%len(sets)] % n))
-		}
-	})
-	b.Run("slice/Set", func(b *testing.B) {
-		slice := make([]bool, b.N)
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			slice[sets[n%len(sets)]%n] = true
-		}
-	})
+	for _, setSize := range setSizes {
+		b.Run(fmt.Sprintf("bitvec/Set size %d", setSize), func(b *testing.B) {
+			bv := New(uint64(setSize))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				bv.TrySet(uint64(sets[i%len(sets)] % setSize))
+			}
+		})
+		b.Run(fmt.Sprintf("abitvec/Set size %d", setSize), func(b *testing.B) {
+			abv := NewAtomic(uint64(setSize))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				abv.TrySet(uint64(sets[i%len(sets)] % setSize))
+			}
+		})
+		b.Run(fmt.Sprintf("slice/Set size %d", setSize), func(b *testing.B) {
+			slice := make([]bool, setSize)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				slice[sets[i%len(sets)]%setSize] = true
+			}
+		})
+	}
 }
 
 func BenchmarkGet(b *testing.B) {
-	b.Run("bitvec/Get", func(b *testing.B) {
-		bv := New(uint64(b.N / 64))
-		for n := 0; n < b.N && sets[n]%2 == 0; n++ {
-			bv.TrySet(uint64(n))
-		}
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			bv.Get(uint64(sets[n%len(sets)] % n))
-		}
-	})
-	b.Run("abitvec/Get", func(b *testing.B) {
-		abv := NewAtomic(uint64(b.N / 64))
-		for n := 0; n < b.N && sets[n]%2 == 0; n++ {
-			abv.TrySet(uint64(n))
-		}
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			abv.Get(uint64(sets[n%len(sets)] % n))
-		}
-	})
-	b.Run("slice/Get", func(b *testing.B) {
-		slice := make([]bool, b.N)
-		for n := 0; n < b.N && sets[n]%2 == 0; n++ {
-			slice[n] = true
-		}
-		b.ResetTimer()
-		for n := 1; n < b.N; n++ {
-			_ = slice[sets[n%len(sets)]%n]
-		}
-	})
+	for _, setSize := range setSizes {
+		b.Run(fmt.Sprintf("bitvec/Get size %d", setSize), func(b *testing.B) {
+			bv := New(uint64(setSize))
+			for n := 0; n < setSize && sets[n]%2 == 0; n++ {
+				bv.TrySet(uint64(n))
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				bv.Get(uint64(sets[i%len(sets)] % setSize))
+			}
+		})
+		b.Run(fmt.Sprintf("abitvec/Get size %d", setSize), func(b *testing.B) {
+			abv := NewAtomic(uint64(setSize))
+			for n := 0; n < setSize && sets[n]%2 == 0; n++ {
+				abv.TrySet(uint64(n))
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				abv.Get(uint64(sets[i%len(sets)] % setSize))
+			}
+		})
+		b.Run(fmt.Sprintf("slice/Get size %d", setSize), func(b *testing.B) {
+			slice := make([]bool, setSize)
+			for n := 0; n < setSize && sets[n]%2 == 0; n++ {
+				slice[n] = true
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = slice[sets[i%len(sets)]%setSize]
+			}
+		})
+	}
 }

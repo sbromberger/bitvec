@@ -19,7 +19,7 @@ type BitVec struct {
 	capacity uint64
 }
 
-// NewBitVec creates a non-atomic bitvector.
+// New creates a non-atomic bitvector with a given size.
 func New(size uint64) BitVec {
 	nints := size / ws
 	if size-(nints*ws) != 0 {

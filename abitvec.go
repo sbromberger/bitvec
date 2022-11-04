@@ -13,7 +13,7 @@ type ABitVec struct {
 	capacity uint64
 }
 
-// NewABitVec returns a new bitvector with the given size
+// NewAtomic returns a new bitvector with the given size
 func NewAtomic(size uint64) ABitVec {
 	return ABitVec{make([]uint64, (size+mask)>>nbits), size}
 }

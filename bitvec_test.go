@@ -107,3 +107,11 @@ func BenchmarkBVAtomicGet(b *testing.B) {
 		bv.Get(uint64(sets[n%len(sets)%n]))
 	}
 }
+func BenchmarkSliceGet(b *testing.B) {
+	bv := make([]bool, b.N)
+	b.ResetTimer()
+	for n := 1; n < b.N; n++ {
+		_ = bv[sets[n%len(sets)]%n]
+	}
+
+}

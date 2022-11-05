@@ -1,12 +1,15 @@
 // Package bitvec is bit-vector with atomic and non-atomic access
 package bitvec
 
-import "errors"
+import (
+	"errors"
+)
 
 const (
-	nbits = 6          // 64 bits in a uint64
-	ws    = 1 << nbits // constant 64
-	mask  = ws - 1     // all ones
+	nbits  = 6          // 64 bits in a uint64
+	ws     = 1 << nbits // constant 64
+	mask   = ws - 1     // all ones
+	allSet = ^uint64(0)
 )
 
 func offset(k uint64) (bucket, bit uint64) {
@@ -51,4 +54,24 @@ func (bv BitVec) Get(k uint64) (bool, error) {
 	}
 	bucket, bit := offset(k)
 	return bv.buckets[bucket]&bit != 0, nil
+}
+
+// Set sets bit `k` to true unconditionally.
+func (bv BitVec) Set(k uint64) error {
+	if k >= bv.capacity {
+		return errors.New("Attempt to access element beyond vector bounds")
+	}
+	bucket, bit := offset(k)
+	bv.buckets[bucket] |= bit
+	return nil
+}
+
+// Clear sets bit `k` to false unconditionally.
+func (bv BitVec) Clear(k uint64) error {
+	if k >= bv.capacity {
+		return errors.New("Attempt to access element beyond vector bounds")
+	}
+	bucket, bit := offset(k)
+	bv.buckets[bucket] &= (allSet ^ bit)
+	return nil
 }

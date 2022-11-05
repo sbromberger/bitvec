@@ -83,3 +83,31 @@ func (bv ABitVec) Get(k uint64) (bool, error) {
 	bucket, bit := offset(k)
 	return bv.buckets[bucket]&bit != 0, nil
 }
+
+// Set sets bit `k` to true unconditionally.
+func (bv ABitVec) Set(k uint64) error {
+	if k >= bv.capacity {
+		return errors.New("Attempt to access element beyond vector bounds")
+	}
+	bucket, bit := offset(k)
+	old := atomic.LoadUint64(&bv.buckets[bucket])
+retry:
+	if atomic.CompareAndSwapUint64(&bv.buckets[bucket], old, old|bit) {
+		return nil
+	}
+	goto retry
+}
+
+// Clear sets bit `k` to false unconditionally.
+func (bv ABitVec) Clear(k uint64) error {
+	if k >= bv.capacity {
+		return errors.New("Attempt to access element beyond vector bounds")
+	}
+	bucket, bit := offset(k)
+	old := atomic.LoadUint64(&bv.buckets[bucket])
+retry:
+	if atomic.CompareAndSwapUint64(&bv.buckets[bucket], old, old&(allSet^bit)) {
+		return nil
+	}
+	goto retry
+}

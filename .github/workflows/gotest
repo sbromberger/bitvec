@@ -1,10 +1,9 @@
-name: go test bitvec
+name: Go
 
 on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -12,7 +11,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.15
+          go-version: 1.x
 
       - name: Build
         run: go build -v ./...
